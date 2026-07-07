@@ -1,17 +1,33 @@
 package com.adamwilkinson.standby.ui
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
+import com.adamwilkinson.standby.ui.theme.StandbyDim
+import kotlinx.coroutines.delay
 import com.adamwilkinson.standby.ui.components.PageIndicator
 import com.adamwilkinson.standby.ui.pages.BatteryPage
 import com.adamwilkinson.standby.ui.pages.CalendarPage
@@ -25,14 +41,26 @@ import kotlin.math.absoluteValue
 fun StandbyPagerScreen(
     pages: List<StandbyPage>,
     clockFace: ClockFaceStyle,
+    onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val pagerState = rememberPagerState { pages.size }
+    // The gear only appears on tap and fades away, keeping the screen clean.
+    var chromeVisible by remember { mutableStateOf(false) }
+    LaunchedEffect(chromeVisible) {
+        if (chromeVisible) {
+            delay(4_000)
+            chromeVisible = false
+        }
+    }
 
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background),
+            .background(MaterialTheme.colorScheme.background)
+            .pointerInput(Unit) {
+                detectTapGestures { chromeVisible = !chromeVisible }
+            },
     ) {
         HorizontalPager(
             state = pagerState,
@@ -72,5 +100,22 @@ fun StandbyPagerScreen(
                 .align(Alignment.BottomCenter)
                 .padding(bottom = 20.dp),
         )
+
+        AnimatedVisibility(
+            visible = chromeVisible,
+            enter = fadeIn(),
+            exit = fadeOut(),
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(16.dp),
+        ) {
+            IconButton(onClick = onOpenSettings) {
+                Icon(
+                    imageVector = Icons.Outlined.Settings,
+                    contentDescription = "Settings",
+                    tint = StandbyDim,
+                )
+            }
+        }
     }
 }
