@@ -4,6 +4,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -52,13 +54,19 @@ fun FlipFace(time: LocalDateTime, use24Hour: Boolean, modifier: Modifier = Modif
                 contentAlignment = Alignment.Center,
             ) {
                 AnimatedDigit(digit = digit, style = digitStyle)
-                // Center seam of the split-flap card.
+                // Center seam of the split-flap card. matchParentSize keeps the
+                // seam from inflating the card's wrap-content width.
                 Box(
-                    modifier = Modifier
-                        .align(Alignment.Center)
-                        .size(width = 200.dp, height = 2.dp)
-                        .background(Color.Black.copy(alpha = 0.6f)),
-                )
+                    modifier = Modifier.matchParentSize(),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(2.dp)
+                            .background(Color.Black.copy(alpha = 0.6f)),
+                    )
+                }
             }
         }
     }
