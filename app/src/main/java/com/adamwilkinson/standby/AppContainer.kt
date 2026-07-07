@@ -1,6 +1,7 @@
 package com.adamwilkinson.standby
 
 import android.content.Context
+import com.adamwilkinson.standby.data.battery.BatteryRepository
 import com.adamwilkinson.standby.data.media.MediaSessionRepository
 
 /**
@@ -10,4 +11,5 @@ import com.adamwilkinson.standby.data.media.MediaSessionRepository
 class AppContainer(private val appContext: Context) {
 
     val mediaSessionRepository by lazy { MediaSessionRepository(appContext) }
+    val batteryRepository by lazy { BatteryRepository(appContext) }
 }

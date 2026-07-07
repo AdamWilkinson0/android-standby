@@ -13,6 +13,9 @@ object StandbyViewModels {
         initializer {
             MediaViewModel(container().mediaSessionRepository)
         }
+        initializer {
+            BatteryViewModel(container().batteryRepository)
+        }
     }
 
     private fun androidx.lifecycle.viewmodel.CreationExtras.container() =

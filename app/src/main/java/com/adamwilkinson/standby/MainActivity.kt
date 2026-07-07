@@ -4,20 +4,13 @@ import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
-import com.adamwilkinson.standby.ui.burnInDrift
-import com.adamwilkinson.standby.ui.pages.ClockPage
+import com.adamwilkinson.standby.ui.StandbyPage
+import com.adamwilkinson.standby.ui.StandbyPagerScreen
 import com.adamwilkinson.standby.ui.pages.clockfaces.ClockFaceStyle
 import com.adamwilkinson.standby.ui.theme.StandbyTheme
 
@@ -53,15 +46,10 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 private fun StandbyRoot() {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background),
-        contentAlignment = Alignment.Center,
-    ) {
-        ClockPage(
-            face = ClockFaceStyle.Digital,
-            modifier = Modifier.burnInDrift(),
-        )
-    }
+    // Weather and Calendar join the list in M4/M5; face selection moves to
+    // settings in M6.
+    StandbyPagerScreen(
+        pages = listOf(StandbyPage.Clock, StandbyPage.NowPlaying, StandbyPage.Battery),
+        clockFace = ClockFaceStyle.Digital,
+    )
 }
