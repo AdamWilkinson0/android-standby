@@ -88,6 +88,12 @@ private fun BigDate(subtitle: String) {
     val time by rememberCurrentTime()
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
+            text = time.format(DateTimeFormatter.ofPattern("EEEE", Locale.getDefault()))
+                .uppercase(Locale.getDefault()),
+            style = MaterialTheme.typography.labelMedium,
+            color = StandbyDim,
+        )
+        Text(
             text = time.format(DateTimeFormatter.ofPattern("d")),
             style = MaterialTheme.typography.displayLarge.copy(
                 fontFamily = Inter,
@@ -97,7 +103,7 @@ private fun BigDate(subtitle: String) {
             color = MaterialTheme.colorScheme.onBackground,
         )
         Text(
-            text = time.format(DateTimeFormatter.ofPattern("EEEE MMMM", Locale.getDefault())),
+            text = time.format(DateTimeFormatter.ofPattern("MMMM", Locale.getDefault())),
             style = MaterialTheme.typography.headlineMedium,
             color = StandbyDim,
         )
