@@ -14,6 +14,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import com.adamwilkinson.standby.ui.components.PageIndicator
 import com.adamwilkinson.standby.ui.pages.BatteryPage
+import com.adamwilkinson.standby.ui.pages.CalendarPage
 import com.adamwilkinson.standby.ui.pages.ClockPage
 import com.adamwilkinson.standby.ui.pages.MediaPage
 import com.adamwilkinson.standby.ui.pages.WeatherPage
@@ -59,9 +60,8 @@ fun StandbyPagerScreen(
                     StandbyPage.Clock -> ClockPage(face = clockFace)
                     StandbyPage.NowPlaying -> MediaPage()
                     StandbyPage.Weather -> WeatherPage()
+                    StandbyPage.Calendar -> CalendarPage()
                     StandbyPage.Battery -> BatteryPage()
-                    // Built in M5; filtered out of the list until then.
-                    StandbyPage.Calendar -> Unit
                 }
             }
         }

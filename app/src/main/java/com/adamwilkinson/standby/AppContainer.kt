@@ -2,6 +2,7 @@ package com.adamwilkinson.standby
 
 import android.content.Context
 import com.adamwilkinson.standby.data.battery.BatteryRepository
+import com.adamwilkinson.standby.data.calendar.CalendarRepository
 import com.adamwilkinson.standby.data.media.MediaSessionRepository
 import com.adamwilkinson.standby.data.settings.SettingsRepository
 import com.adamwilkinson.standby.data.weather.WeatherApi
@@ -19,6 +20,7 @@ class AppContainer(private val appContext: Context) {
     val settingsRepository by lazy { SettingsRepository(appContext) }
     val mediaSessionRepository by lazy { MediaSessionRepository(appContext) }
     val batteryRepository by lazy { BatteryRepository(appContext) }
+    val calendarRepository by lazy { CalendarRepository(appContext) }
     val weatherRepository by lazy {
         WeatherRepository(appContext, WeatherApi(okHttpClient), settingsRepository)
     }

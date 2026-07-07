@@ -19,6 +19,9 @@ object StandbyViewModels {
         initializer {
             WeatherViewModel(container().weatherRepository)
         }
+        initializer {
+            CalendarViewModel(container().calendarRepository)
+        }
     }
 
     private fun androidx.lifecycle.viewmodel.CreationExtras.container() =

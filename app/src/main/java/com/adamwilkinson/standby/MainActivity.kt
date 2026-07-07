@@ -49,12 +49,7 @@ private fun StandbyRoot() {
     // Weather and Calendar join the list in M4/M5; face selection moves to
     // settings in M6.
     StandbyPagerScreen(
-        pages = listOf(
-            StandbyPage.Clock,
-            StandbyPage.NowPlaying,
-            StandbyPage.Weather,
-            StandbyPage.Battery,
-        ),
+        pages = StandbyPage.Default,
         clockFace = ClockFaceStyle.Digital,
     )
 }
