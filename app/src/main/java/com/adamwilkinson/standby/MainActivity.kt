@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -37,8 +38,16 @@ class MainActivity : ComponentActivity() {
         setContent {
             StandbyTheme {
                 StandbyEffects()
-                StandbyRoot()
+                StandbyRoot(onApplyBrightness = ::applyBrightness)
             }
+        }
+    }
+
+    /** Overrides window brightness; null returns control to the system. */
+    private fun applyBrightness(value: Float?) {
+        window.attributes = window.attributes.apply {
+            screenBrightness =
+                value ?: WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
         }
     }
 
@@ -61,12 +70,17 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 private fun StandbyRoot(
+    onApplyBrightness: (Float?) -> Unit,
     settingsViewModel: SettingsViewModel = viewModel(factory = StandbyViewModels.Factory),
 ) {
     val settings by settingsViewModel.settings.collectAsStateWithLifecycle()
     var showSettings by remember { mutableStateOf(false) }
 
     val current = settings
+    LaunchedEffect(current?.screenBrightness) {
+        onApplyBrightness(current?.screenBrightness)
+    }
+
     when {
         // DataStore hasn't emitted yet; hold black rather than flashing UI.
         current == null -> Box(
@@ -84,6 +98,10 @@ private fun StandbyRoot(
         else -> StandbyPagerScreen(
             pages = StandbyPage.fromIds(current.pageIds),
             clockFace = ClockFaceStyle.fromId(current.clockFaceId),
+            nightDimEnabled = current.nightDimEnabled,
+            brightness = current.screenBrightness ?: 1f,
+            onBrightnessChange = onApplyBrightness,
+            onBrightnessCommit = settingsViewModel::setScreenBrightness,
             onOpenSettings = { showSettings = true },
         )
     }

@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
@@ -21,6 +22,8 @@ data class StandbySettings(
     val useFahrenheit: Boolean,
     val nightDimEnabled: Boolean,
     val onboardingComplete: Boolean,
+    /** Window brightness override 0.05..1, or null to follow the system. */
+    val screenBrightness: Float?,
 )
 
 class SettingsRepository(private val context: Context) {
@@ -34,6 +37,7 @@ class SettingsRepository(private val context: Context) {
         val FAHRENHEIT = booleanPreferencesKey("fahrenheit")
         val NIGHT_DIM = booleanPreferencesKey("night_dim")
         val ONBOARDING_DONE = booleanPreferencesKey("onboarding_done")
+        val BRIGHTNESS = floatPreferencesKey("brightness")
     }
 
     val settings: Flow<StandbySettings> = context.settingsDataStore.data.map { prefs ->
@@ -46,6 +50,7 @@ class SettingsRepository(private val context: Context) {
             useFahrenheit = prefs[Keys.FAHRENHEIT] ?: false,
             nightDimEnabled = prefs[Keys.NIGHT_DIM] ?: true,
             onboardingComplete = prefs[Keys.ONBOARDING_DONE] ?: false,
+            screenBrightness = prefs[Keys.BRIGHTNESS],
         )
     }
 
@@ -85,5 +90,9 @@ class SettingsRepository(private val context: Context) {
 
     suspend fun setOnboardingComplete() {
         context.settingsDataStore.edit { it[Keys.ONBOARDING_DONE] = true }
+    }
+
+    suspend fun setScreenBrightness(value: Float) {
+        context.settingsDataStore.edit { it[Keys.BRIGHTNESS] = value }
     }
 }

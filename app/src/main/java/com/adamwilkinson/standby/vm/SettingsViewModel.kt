@@ -62,4 +62,8 @@ class SettingsViewModel(
     fun completeOnboarding() {
         viewModelScope.launch { settingsRepository.setOnboardingComplete() }
     }
+
+    fun setScreenBrightness(value: Float) {
+        viewModelScope.launch { settingsRepository.setScreenBrightness(value) }
+    }
 }

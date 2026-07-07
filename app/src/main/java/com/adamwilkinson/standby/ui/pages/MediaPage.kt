@@ -35,6 +35,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
@@ -129,6 +131,19 @@ private fun NowPlayingContent(
         animationSpec = tween(600),
         label = "accent",
     )
+
+    // Blurred artwork backdrop (no-op below API 31, where pure black remains).
+    media.art?.let { art ->
+        Image(
+            bitmap = art.asImageBitmap(),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier
+                .fillMaxSize()
+                .blur(90.dp)
+                .alpha(0.22f),
+        )
+    }
 
     Row(
         modifier = Modifier
