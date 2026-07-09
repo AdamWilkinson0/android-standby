@@ -34,7 +34,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
-import com.adamwilkinson.standby.ui.theme.StandbyAccent
 import com.adamwilkinson.standby.ui.theme.StandbyDim
 import com.adamwilkinson.standby.ui.theme.StandbyFaint
 import kotlinx.coroutines.delay
@@ -44,21 +43,119 @@ import com.adamwilkinson.standby.ui.pages.CalendarPage
 import com.adamwilkinson.standby.ui.pages.ClockPage
 import com.adamwilkinson.standby.ui.pages.MediaPage
 import com.adamwilkinson.standby.ui.pages.WeatherPage
+import android.os.SystemClock
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.snapshotFlow
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.adamwilkinson.standby.ui.customize.ClockCustomizerOverlay
+import com.adamwilkinson.standby.ui.customize.PanePickerOverlay
 import com.adamwilkinson.standby.ui.pages.clockfaces.ClockFaceStyle
+import com.adamwilkinson.standby.ui.pages.clockfaces.ClockFont
+import com.adamwilkinson.standby.ui.split.PaneWidget
+import com.adamwilkinson.standby.ui.split.SplitView
+import com.adamwilkinson.standby.ui.split.rememberSplitPaneState
+import com.adamwilkinson.standby.ui.theme.AccentPreset
+import com.adamwilkinson.standby.ui.theme.LocalAccent
+import com.adamwilkinson.standby.vm.MediaViewModel
+import com.adamwilkinson.standby.vm.StandbyViewModels
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.launch
 import kotlin.math.absoluteValue
 
 @Composable
 fun StandbyPagerScreen(
     pages: List<StandbyPage>,
     clockFace: ClockFaceStyle,
+    clockFont: ClockFont,
     nightDimEnabled: Boolean,
     brightness: Float,
+    autoSplitMedia: Boolean,
+    leftPaneId: String?,
+    rightPaneId: String?,
+    onLeftPaneChanged: (String) -> Unit,
+    onRightPaneChanged: (String) -> Unit,
+    onClockFaceSelected: (ClockFaceStyle) -> Unit,
+    onClockFontSelected: (ClockFont) -> Unit,
+    onAccentSelected: (AccentPreset) -> Unit,
     onBrightnessChange: (Float) -> Unit,
     onBrightnessCommit: (Float) -> Unit,
     onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val pagerState = rememberPagerState { pages.size }
+    val splitState = rememberSplitPaneState(leftPaneId, rightPaneId)
+    val scope = rememberCoroutineScope()
+
+    // Long-press edit modes: the clock customizer and the pane picker.
+    var customizing by remember { mutableStateOf(false) }
+    var pickerForLeftPane by remember { mutableStateOf<Boolean?>(null) }
+
+    // Persist only user-settled pane swipes. Auto-split announces the page it
+    // is about to animate to; that one settle event is skipped so a temporary
+    // Now Playing pane is never written back.
+    var skipRightPersistFor by remember { mutableStateOf<Int?>(null) }
+    LaunchedEffect(splitState) {
+        snapshotFlow { splitState.leftPager.settledPage }.drop(1).collect {
+            onLeftPaneChanged(PaneWidget.All[it].id)
+        }
+    }
+    LaunchedEffect(splitState) {
+        snapshotFlow { splitState.rightPager.settledPage }.drop(1).collect {
+            val skip = skipRightPersistFor == it
+            skipRightPersistFor = null
+            if (!skip) onRightPaneChanged(PaneWidget.All[it].id)
+        }
+    }
+
+    // Auto-split: when playback starts, glide to the split view and slide the
+    // right pane onto Now Playing. Rising-edge only, with a cooldown so it
+    // never fights a user swipe; a touch cancels the animation anyway.
+    val mediaViewModel: MediaViewModel = viewModel(factory = StandbyViewModels.Factory)
+    var lastUserScrollAt by remember { mutableLongStateOf(0L) }
+    LaunchedEffect(pagerState) {
+        snapshotFlow { pagerState.isScrollInProgress }.collect { scrolling ->
+            if (scrolling) lastUserScrollAt = SystemClock.elapsedRealtime()
+        }
+    }
+    val splitIndex = pages.indexOf(StandbyPage.Split)
+    LaunchedEffect(autoSplitMedia, splitIndex) {
+        if (!autoSplitMedia || splitIndex < 0) return@LaunchedEffect
+        val mediaPane = PaneWidget.All.indexOf(PaneWidget.NowPlaying)
+        var wasPlaying = mediaViewModel.nowPlaying.value?.isPlaying == true
+        var paneBeforeMedia: Int? = null
+        var transition: Job? = null
+        mediaViewModel.nowPlaying.collect { media ->
+            val playing = media?.isPlaying == true
+            if (playing == wasPlaying) return@collect
+            wasPlaying = playing
+            transition?.cancel()
+            transition = launch {
+                if (playing) {
+                    val idle = SystemClock.elapsedRealtime() - lastUserScrollAt > 3_000
+                    if (idle && !pagerState.isScrollInProgress) {
+                        if (splitState.rightPager.currentPage != mediaPane) {
+                            paneBeforeMedia = splitState.rightPager.currentPage
+                        }
+                        pagerState.animateScrollToPage(splitIndex)
+                        skipRightPersistFor = mediaPane
+                        splitState.rightPager.animateScrollToPage(mediaPane)
+                    }
+                } else {
+                    // Restore the displaced pane only once playback has been
+                    // stopped for a while; resuming cancels this.
+                    val restore = paneBeforeMedia ?: return@launch
+                    if (splitState.rightPager.currentPage == mediaPane) {
+                        delay(10_000)
+                        skipRightPersistFor = restore
+                        splitState.rightPager.animateScrollToPage(restore)
+                        paneBeforeMedia = null
+                    }
+                }
+            }
+        }
+    }
     // Chrome (gear + brightness) only appears on tap and fades away.
     var chromeVisible by remember { mutableStateOf(false) }
     var chromeInteraction by remember { mutableIntStateOf(0) }
@@ -108,7 +205,25 @@ fun StandbyPagerScreen(
                     },
             ) {
                 when (pages[index]) {
-                    StandbyPage.Clock -> ClockPage(face = clockFace)
+                    StandbyPage.Split -> SplitView(
+                        state = splitState,
+                        clockFace = clockFace,
+                        clockFont = clockFont,
+                        onPaneLongPress = { isLeft, widget ->
+                            if (widget == PaneWidget.Clock) {
+                                customizing = true
+                            } else {
+                                pickerForLeftPane = isLeft
+                            }
+                        },
+                    )
+                    StandbyPage.Clock -> ClockPage(
+                        face = clockFace,
+                        font = clockFont,
+                        modifier = Modifier.pointerInput(Unit) {
+                            detectTapGestures(onLongPress = { customizing = true })
+                        },
+                    )
                     StandbyPage.NowPlaying -> MediaPage()
                     StandbyPage.Weather -> WeatherPage()
                     StandbyPage.Calendar -> CalendarPage()
@@ -116,6 +231,35 @@ fun StandbyPagerScreen(
                 }
             }
         }
+
+        ClockCustomizerOverlay(
+            visible = customizing,
+            face = clockFace,
+            font = clockFont,
+            accent = LocalAccent.current,
+            onSelectFace = onClockFaceSelected,
+            onSelectFont = onClockFontSelected,
+            onSelectAccent = onAccentSelected,
+            onDone = { customizing = false },
+        )
+
+        val pickerPager = when (pickerForLeftPane) {
+            true -> splitState.leftPager
+            false -> splitState.rightPager
+            null -> null
+        }
+        PanePickerOverlay(
+            visible = pickerPager != null,
+            selected = pickerPager?.let { PaneWidget.All[it.currentPage] } ?: PaneWidget.Clock,
+            onSelect = { widget ->
+                pickerPager?.let { pager ->
+                    scope.launch {
+                        pager.animateScrollToPage(PaneWidget.All.indexOf(widget))
+                    }
+                }
+            },
+            onDismiss = { pickerForLeftPane = null },
+        )
 
         // Night dim: warm-black wash between 22:00 and 07:00. Draw-only, so
         // it never intercepts touches.
@@ -171,7 +315,7 @@ fun StandbyPagerScreen(
                 valueRange = 0.05f..1f,
                 colors = SliderDefaults.colors(
                     thumbColor = StandbyDim,
-                    activeTrackColor = StandbyAccent.copy(alpha = 0.7f),
+                    activeTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
                     inactiveTrackColor = StandbyFaint.copy(alpha = 0.4f),
                 ),
                 modifier = Modifier.width(320.dp),

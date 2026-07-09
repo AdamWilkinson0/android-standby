@@ -4,6 +4,11 @@ import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -21,11 +26,14 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.adamwilkinson.standby.data.settings.StandbySettings
 import com.adamwilkinson.standby.ui.StandbyPage
 import com.adamwilkinson.standby.ui.StandbyPagerScreen
 import com.adamwilkinson.standby.ui.onboarding.OnboardingScreen
 import com.adamwilkinson.standby.ui.pages.clockfaces.ClockFaceStyle
+import com.adamwilkinson.standby.ui.pages.clockfaces.ClockFont
 import com.adamwilkinson.standby.ui.settings.SettingsScreen
+import com.adamwilkinson.standby.ui.theme.AccentPreset
 import com.adamwilkinson.standby.ui.theme.StandbyTheme
 import com.adamwilkinson.standby.vm.SettingsViewModel
 import com.adamwilkinson.standby.vm.StandbyViewModels
@@ -36,10 +44,8 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         WindowCompat.setDecorFitsSystemWindows(window, false)
         setContent {
-            StandbyTheme {
-                StandbyEffects()
-                StandbyRoot(onApplyBrightness = ::applyBrightness)
-            }
+            StandbyEffects()
+            StandbyRoot(onApplyBrightness = ::applyBrightness)
         }
     }
 
@@ -81,6 +87,25 @@ private fun StandbyRoot(
         onApplyBrightness(current?.screenBrightness)
     }
 
+    StandbyTheme(accent = AccentPreset.fromId(current?.accentId)) {
+        StandbyContent(
+            current = current,
+            showSettings = showSettings,
+            onShowSettings = { showSettings = it },
+            onApplyBrightness = onApplyBrightness,
+            settingsViewModel = settingsViewModel,
+        )
+    }
+}
+
+@Composable
+private fun StandbyContent(
+    current: StandbySettings?,
+    showSettings: Boolean,
+    onShowSettings: (Boolean) -> Unit,
+    onApplyBrightness: (Float?) -> Unit,
+    settingsViewModel: SettingsViewModel,
+) {
     when {
         // DataStore hasn't emitted yet; hold black rather than flashing UI.
         current == null -> Box(
@@ -93,16 +118,33 @@ private fun StandbyRoot(
             onDone = settingsViewModel::completeOnboarding,
         )
 
-        showSettings -> SettingsScreen(onClose = { showSettings = false })
-
-        else -> StandbyPagerScreen(
-            pages = StandbyPage.fromIds(current.pageIds),
-            clockFace = ClockFaceStyle.fromId(current.clockFaceId),
-            nightDimEnabled = current.nightDimEnabled,
-            brightness = current.screenBrightness ?: 1f,
-            onBrightnessChange = onApplyBrightness,
-            onBrightnessCommit = settingsViewModel::setScreenBrightness,
-            onOpenSettings = { showSettings = true },
-        )
+        else -> Box(Modifier.fillMaxSize()) {
+            StandbyPagerScreen(
+                pages = StandbyPage.fromIds(current.pageIds),
+                clockFace = ClockFaceStyle.fromId(current.clockFaceId),
+                clockFont = ClockFont.fromId(current.clockFontId),
+                nightDimEnabled = current.nightDimEnabled,
+                brightness = current.screenBrightness ?: 1f,
+                autoSplitMedia = current.autoSplitMedia,
+                leftPaneId = current.leftPaneId,
+                rightPaneId = current.rightPaneId,
+                onLeftPaneChanged = settingsViewModel::setLeftPane,
+                onRightPaneChanged = settingsViewModel::setRightPane,
+                onClockFaceSelected = settingsViewModel::setClockFace,
+                onClockFontSelected = settingsViewModel::setClockFont,
+                onAccentSelected = settingsViewModel::setAccent,
+                onBrightnessChange = onApplyBrightness,
+                onBrightnessCommit = settingsViewModel::setScreenBrightness,
+                onOpenSettings = { onShowSettings(true) },
+            )
+            // Settings slide up over the pager, iOS sheet style.
+            AnimatedVisibility(
+                visible = showSettings,
+                enter = slideInVertically(initialOffsetY = { it / 8 }) + fadeIn(),
+                exit = slideOutVertically(targetOffsetY = { it / 8 }) + fadeOut(),
+            ) {
+                SettingsScreen(onClose = { onShowSettings(false) })
+            }
+        }
     }
 }

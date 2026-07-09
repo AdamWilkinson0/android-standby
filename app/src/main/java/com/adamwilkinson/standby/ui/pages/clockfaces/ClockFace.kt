@@ -15,7 +15,7 @@ enum class ClockFaceStyle(val id: String, val label: String) {
     Digital("digital", "Digital"),
     Analog("analog", "Analog"),
     Flip("flip", "Flip"),
-    Minimal("minimal", "Minimal");
+    Minimal("minimal", "Stacked");
 
     companion object {
         fun fromId(id: String?): ClockFaceStyle =

@@ -35,8 +35,10 @@ import com.adamwilkinson.standby.data.weather.Weather
 import com.adamwilkinson.standby.data.weather.WeatherUiState
 import com.adamwilkinson.standby.data.weather.weatherDescription
 import com.adamwilkinson.standby.data.weather.weatherKind
+import com.adamwilkinson.standby.ui.WidgetSize
 import com.adamwilkinson.standby.ui.components.WeatherGlyph
 import com.adamwilkinson.standby.ui.theme.Inter
+import com.adamwilkinson.standby.ui.theme.LocalAccent
 import com.adamwilkinson.standby.ui.theme.StandbyDim
 import com.adamwilkinson.standby.ui.theme.StandbyFaint
 import com.adamwilkinson.standby.ui.theme.TABULAR_NUMS
@@ -143,42 +145,78 @@ private fun LocationSetup(viewModel: WeatherViewModel) {
 }
 
 @Composable
-private fun WeatherContent(weather: Weather) {
+internal fun WeatherContent(
+    weather: Weather,
+    size: WidgetSize = WidgetSize.Full,
+    modifier: Modifier = Modifier,
+) {
+    val accent = LocalAccent.current
     val unit = if (weather.fahrenheit) "°F" else "°C"
+    val tempStyle = MaterialTheme.typography.displayLarge.copy(
+        fontFamily = Inter,
+        fontWeight = FontWeight.Bold,
+        fontSize = if (size == WidgetSize.Full) 150.sp else 96.sp,
+        fontFeatureSettings = TABULAR_NUMS,
+    )
+    val rangeLine = buildString {
+        append("H ${weather.todayHigh.roundToInt()}$unit   ")
+        append("L ${weather.todayLow.roundToInt()}$unit")
+        if (size == WidgetSize.Full) weather.placeName?.let { append("   $it") }
+    }
 
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(56.dp),
-    ) {
-        WeatherGlyph(
-            kind = weatherKind(weather.weatherCode, weather.isDay),
-            modifier = Modifier.size(180.dp),
-        )
-        Column {
+    if (size == WidgetSize.Full) {
+        Row(
+            modifier = modifier,
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(56.dp),
+        ) {
+            WeatherGlyph(
+                kind = weatherKind(weather.weatherCode, weather.isDay),
+                modifier = Modifier.size(180.dp),
+            )
+            Column {
+                Text(
+                    text = "${weather.temperature.roundToInt()}°",
+                    style = tempStyle,
+                    color = accent.primary,
+                )
+                Text(
+                    text = weatherDescription(weather.weatherCode),
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = accent.secondary,
+                )
+                Spacer(Modifier.height(10.dp))
+                Text(
+                    text = rangeLine,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = StandbyDim,
+                )
+            }
+        }
+    } else {
+        Column(
+            modifier = modifier,
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            WeatherGlyph(
+                kind = weatherKind(weather.weatherCode, weather.isDay),
+                modifier = Modifier.size(84.dp),
+            )
             Text(
                 text = "${weather.temperature.roundToInt()}°",
-                style = MaterialTheme.typography.displayLarge.copy(
-                    fontFamily = Inter,
-                    fontWeight = FontWeight.ExtraLight,
-                    fontSize = 130.sp,
-                    fontFeatureSettings = TABULAR_NUMS,
-                ),
-                color = MaterialTheme.colorScheme.onBackground,
+                style = tempStyle,
+                color = accent.primary,
             )
             Text(
                 text = weatherDescription(weather.weatherCode),
-                style = MaterialTheme.typography.headlineMedium,
-                color = StandbyDim,
+                style = MaterialTheme.typography.titleLarge,
+                color = accent.secondary,
             )
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(6.dp))
             Text(
-                text = buildString {
-                    append("H ${weather.todayHigh.roundToInt()}$unit   ")
-                    append("L ${weather.todayLow.roundToInt()}$unit")
-                    weather.placeName?.let { append("   $it") }
-                },
-                style = MaterialTheme.typography.bodyLarge,
-                color = StandbyFaint,
+                text = rangeLine,
+                style = MaterialTheme.typography.bodyMedium,
+                color = StandbyDim,
             )
         }
     }

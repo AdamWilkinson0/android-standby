@@ -7,6 +7,8 @@ import com.adamwilkinson.standby.data.settings.StandbySettings
 import com.adamwilkinson.standby.data.weather.WeatherRepository
 import com.adamwilkinson.standby.ui.StandbyPage
 import com.adamwilkinson.standby.ui.pages.clockfaces.ClockFaceStyle
+import com.adamwilkinson.standby.ui.pages.clockfaces.ClockFont
+import com.adamwilkinson.standby.ui.theme.AccentPreset
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
@@ -22,6 +24,26 @@ class SettingsViewModel(
 
     fun setClockFace(style: ClockFaceStyle) {
         viewModelScope.launch { settingsRepository.setClockFace(style.id) }
+    }
+
+    fun setClockFont(font: ClockFont) {
+        viewModelScope.launch { settingsRepository.setClockFont(font.id) }
+    }
+
+    fun setAccent(accent: AccentPreset) {
+        viewModelScope.launch { settingsRepository.setAccent(accent.id) }
+    }
+
+    fun setAutoSplitMedia(value: Boolean) {
+        viewModelScope.launch { settingsRepository.setAutoSplitMedia(value) }
+    }
+
+    fun setLeftPane(id: String) {
+        viewModelScope.launch { settingsRepository.setLeftPane(id) }
+    }
+
+    fun setRightPane(id: String) {
+        viewModelScope.launch { settingsRepository.setRightPane(id) }
     }
 
     fun setPageEnabled(page: StandbyPage, enabled: Boolean) {

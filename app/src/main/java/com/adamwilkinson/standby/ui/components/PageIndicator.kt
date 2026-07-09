@@ -4,7 +4,10 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.pager.PagerState
@@ -24,7 +27,11 @@ import kotlinx.coroutines.delay
 
 /** Dots that appear while swiping and quietly fade away after two seconds. */
 @Composable
-fun PageIndicator(pagerState: PagerState, modifier: Modifier = Modifier) {
+fun PageIndicator(
+    pagerState: PagerState,
+    modifier: Modifier = Modifier,
+    orientation: Orientation = Orientation.Horizontal,
+) {
     var visible by remember { mutableStateOf(false) }
 
     LaunchedEffect(pagerState.isScrollInProgress, pagerState.currentPage) {
@@ -42,16 +49,28 @@ fun PageIndicator(pagerState: PagerState, modifier: Modifier = Modifier) {
         exit = fadeOut(),
         modifier = modifier,
     ) {
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            repeat(pagerState.pageCount) { index ->
-                val active = index == pagerState.currentPage
-                androidx.compose.foundation.layout.Box(
-                    modifier = Modifier
-                        .size(if (active) 8.dp else 6.dp)
-                        .clip(CircleShape)
-                        .background(if (active) StandbyDim else StandbyFaint),
-                )
+        if (orientation == Orientation.Horizontal) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                repeat(pagerState.pageCount) { index ->
+                    IndicatorDot(active = index == pagerState.currentPage)
+                }
+            }
+        } else {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                repeat(pagerState.pageCount) { index ->
+                    IndicatorDot(active = index == pagerState.currentPage)
+                }
             }
         }
     }
+}
+
+@Composable
+private fun IndicatorDot(active: Boolean) {
+    Box(
+        modifier = Modifier
+            .size(if (active) 8.dp else 6.dp)
+            .clip(CircleShape)
+            .background(if (active) StandbyDim else StandbyFaint),
+    )
 }

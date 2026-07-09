@@ -17,10 +17,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -28,12 +32,13 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.adamwilkinson.standby.data.battery.BatteryStatus
 import com.adamwilkinson.standby.data.battery.PlugType
 import com.adamwilkinson.standby.ui.theme.Inter
-import com.adamwilkinson.standby.ui.theme.StandbyDim
+import com.adamwilkinson.standby.ui.theme.LocalAccent
 import com.adamwilkinson.standby.ui.theme.TABULAR_NUMS
 import com.adamwilkinson.standby.vm.BatteryViewModel
 import com.adamwilkinson.standby.vm.StandbyViewModels
 
 private val ChargeGreen = Color(0xFF6FCF97)
+private val ChargeGreenDeep = Color(0xFF2E7D51)
 
 @Composable
 fun BatteryPage(
@@ -43,27 +48,50 @@ fun BatteryPage(
     val status by viewModel.status.collectAsStateWithLifecycle()
 
     Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        status?.let { BatteryContent(it) }
+        status?.let {
+            BatteryRing(
+                status = it,
+                diameter = 280.dp,
+                strokeWidth = 22.dp,
+                percentStyle = MaterialTheme.typography.displayMedium.copy(
+                    fontFamily = Inter,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 88.sp,
+                    fontFeatureSettings = TABULAR_NUMS,
+                ),
+                showStatusText = true,
+            )
+        }
     }
 }
 
+/** Thick progress ring with a bold percentage — shared by page and pane. */
 @Composable
-private fun BatteryContent(status: BatteryStatus) {
+fun BatteryRing(
+    status: BatteryStatus,
+    diameter: Dp,
+    strokeWidth: Dp,
+    percentStyle: TextStyle,
+    showStatusText: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    val accent = LocalAccent.current
     val active = status.isCharging || status.isFull
-    val ringColor = if (active) ChargeGreen else MaterialTheme.colorScheme.onBackground
+    val ringColor = if (active) ChargeGreen else accent.primary
+    val ringColorDeep = if (active) ChargeGreenDeep else accent.deep
     val sweep by animateFloatAsState(
         targetValue = status.percent / 100f * 360f,
         animationSpec = tween(900),
         label = "batterySweep",
     )
 
-    Box(contentAlignment = Alignment.Center) {
-        Canvas(modifier = Modifier.size(260.dp)) {
-            val stroke = Stroke(width = 14f, cap = StrokeCap.Round)
+    Box(modifier = modifier, contentAlignment = Alignment.Center) {
+        Canvas(modifier = Modifier.size(diameter)) {
+            val stroke = Stroke(width = strokeWidth.toPx(), cap = StrokeCap.Round)
             val inset = stroke.width / 2f
             val arcSize = Size(size.width - stroke.width, size.height - stroke.width)
             drawArc(
-                color = Color(0xFF1C1C1C),
+                color = Color(0xFF232323),
                 startAngle = 0f,
                 sweepAngle = 360f,
                 useCenter = false,
@@ -71,38 +99,43 @@ private fun BatteryContent(status: BatteryStatus) {
                 size = arcSize,
                 style = stroke,
             )
-            drawArc(
-                color = ringColor,
-                startAngle = -90f,
-                sweepAngle = sweep,
-                useCenter = false,
-                topLeft = Offset(inset, inset),
-                size = arcSize,
-                style = stroke,
-            )
+            // Sweep gradient rotated so the dark end sits at the arc start
+            // (12 o'clock) and brightens toward the tip.
+            rotate(degrees = -90f) {
+                drawArc(
+                    brush = Brush.sweepGradient(
+                        0f to ringColorDeep,
+                        0.25f to ringColor,
+                        1f to ringColor,
+                    ),
+                    startAngle = 0f,
+                    sweepAngle = sweep,
+                    useCenter = false,
+                    topLeft = Offset(inset, inset),
+                    size = arcSize,
+                    style = stroke,
+                )
+            }
         }
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
                 text = "${status.percent}%",
-                style = MaterialTheme.typography.displayMedium.copy(
-                    fontFamily = Inter,
-                    fontWeight = FontWeight.ExtraLight,
-                    fontSize = 64.sp,
-                    fontFeatureSettings = TABULAR_NUMS,
-                ),
-                color = MaterialTheme.colorScheme.onBackground,
+                style = percentStyle,
+                color = if (active) ChargeGreen else accent.primary,
             )
-            Spacer(Modifier.height(4.dp))
-            Text(
-                text = when {
-                    status.isFull -> "Fully charged"
-                    status.isCharging && status.plug == PlugType.Wireless -> "Charging wirelessly"
-                    status.isCharging -> "Charging"
-                    else -> "On battery"
-                },
-                style = MaterialTheme.typography.bodyMedium,
-                color = if (active) ChargeGreen else StandbyDim,
-            )
+            if (showStatusText) {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = when {
+                        status.isFull -> "Fully charged"
+                        status.isCharging && status.plug == PlugType.Wireless -> "Charging wirelessly"
+                        status.isCharging -> "Charging"
+                        else -> "On battery"
+                    },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (active) ChargeGreen else accent.secondary,
+                )
+            }
         }
     }
 }

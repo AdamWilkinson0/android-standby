@@ -5,8 +5,6 @@ import android.graphics.Bitmap
 import android.os.SystemClock
 import android.provider.Settings
 import androidx.compose.animation.Crossfade
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -30,7 +28,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -38,7 +35,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -47,22 +48,20 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.palette.graphics.Palette
 import coil.compose.AsyncImage
 import com.adamwilkinson.standby.data.media.NowPlaying
 import com.adamwilkinson.standby.ui.components.MusicNoteIcon
 import com.adamwilkinson.standby.ui.components.PermissionCard
 import com.adamwilkinson.standby.ui.components.PlayPauseIcon
 import com.adamwilkinson.standby.ui.components.SkipIcon
-import com.adamwilkinson.standby.ui.theme.StandbyAccent
+import com.adamwilkinson.standby.ui.theme.ArtColors
 import com.adamwilkinson.standby.ui.theme.StandbyDim
 import com.adamwilkinson.standby.ui.theme.StandbyFaint
+import com.adamwilkinson.standby.ui.theme.rememberArtColors
 import com.adamwilkinson.standby.vm.MediaViewModel
 import com.adamwilkinson.standby.vm.StandbyViewModels
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
-import kotlinx.coroutines.withContext
 
 @Composable
 fun MediaPage(
@@ -126,24 +125,47 @@ private fun NowPlayingContent(
     onSkipNext: () -> Unit,
     onSkipPrevious: () -> Unit,
 ) {
-    val accent by animateColorAsState(
-        targetValue = rememberArtAccent(media.art),
-        animationSpec = tween(600),
-        label = "accent",
-    )
+    val artColors = rememberArtColors(media.art)
+    val accent = artColors.accent
 
-    // Blurred artwork backdrop (no-op below API 31, where pure black remains).
+    // Rich colored base so sub-API-31 devices (where blur is a no-op) still
+    // get a vibrant backdrop instead of pure black.
+    Box(
+        Modifier
+            .fillMaxSize()
+            .background(
+                Brush.verticalGradient(
+                    0f to artColors.accentDark.copy(alpha = 0.8f),
+                    1f to Color.Black,
+                ),
+            ),
+    )
+    // Saturation-boosted blurred artwork on top (blur needs API 31+).
     media.art?.let { art ->
         Image(
             bitmap = art.asImageBitmap(),
             contentDescription = null,
             contentScale = ContentScale.Crop,
+            colorFilter = ColorFilter.colorMatrix(
+                ColorMatrix().apply { setToSaturation(1.6f) },
+            ),
             modifier = Modifier
                 .fillMaxSize()
                 .blur(90.dp)
-                .alpha(0.22f),
+                .alpha(0.45f),
         )
     }
+    // Bottom scrim keeps text and controls legible over the color.
+    Box(
+        Modifier
+            .fillMaxSize()
+            .background(
+                Brush.verticalGradient(
+                    0.55f to Color.Transparent,
+                    1f to Color.Black.copy(alpha = 0.4f),
+                ),
+            ),
+    )
 
     Row(
         modifier = Modifier
@@ -158,6 +180,12 @@ private fun NowPlayingContent(
             modifier = Modifier
                 .fillMaxHeight()
                 .aspectRatio(1f)
+                .shadow(
+                    elevation = 24.dp,
+                    shape = RoundedCornerShape(28.dp),
+                    ambientColor = accent,
+                    spotColor = accent,
+                )
                 .clip(RoundedCornerShape(28.dp)),
         )
 
@@ -189,13 +217,13 @@ private fun NowPlayingContent(
                 onSkipPrevious = onSkipPrevious,
             )
             Spacer(Modifier.height(32.dp))
-            ProgressBar(media = media, accent = accent)
+            ProgressBar(media = media, colors = artColors)
         }
     }
 }
 
 @Composable
-private fun AlbumArt(art: Bitmap?, artUri: String?, modifier: Modifier = Modifier) {
+internal fun AlbumArt(art: Bitmap?, artUri: String?, modifier: Modifier = Modifier) {
     Crossfade(targetState = art, label = "albumArt", modifier = modifier) { bitmap ->
         when {
             bitmap != null -> Image(
@@ -251,16 +279,16 @@ private fun TransportControls(
         }
         Box(
             modifier = Modifier
-                .size(72.dp)
+                .size(80.dp)
                 .clip(CircleShape)
-                .background(accent.copy(alpha = 0.16f))
+                .background(accent)
                 .clickable(onClick = onPlayPause),
             contentAlignment = Alignment.Center,
         ) {
             PlayPauseIcon(
                 isPlaying = media.isPlaying,
-                color = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.size(30.dp),
+                color = Color.Black,
+                modifier = Modifier.size(32.dp),
             )
         }
         Box(
@@ -280,7 +308,7 @@ private fun TransportControls(
 }
 
 @Composable
-private fun ProgressBar(media: NowPlaying, accent: Color) {
+private fun ProgressBar(media: NowPlaying, colors: ArtColors) {
     // PlaybackState.position is a snapshot; extrapolate while playing so the
     // bar moves between callbacks instead of freezing.
     var position by remember(media) { mutableLongStateOf(extrapolatedPosition(media)) }
@@ -296,42 +324,27 @@ private fun ProgressBar(media: NowPlaying, accent: Color) {
         Box(
             Modifier
                 .fillMaxWidth(0.9f)
-                .height(4.dp)
-                .clip(RoundedCornerShape(2.dp))
-                .background(Color(0xFF222222)),
+                .height(6.dp)
+                .clip(RoundedCornerShape(3.dp))
+                .background(Color.White.copy(alpha = 0.15f)),
         ) {
             Box(
                 Modifier
                     .fillMaxWidth(fraction)
-                    .height(4.dp)
-                    .background(accent),
+                    .height(6.dp)
+                    .background(
+                        Brush.horizontalGradient(
+                            listOf(colors.accentDark, colors.accent),
+                        ),
+                    ),
             )
         }
     }
 }
 
-private fun extrapolatedPosition(media: NowPlaying): Long {
+internal fun extrapolatedPosition(media: NowPlaying): Long {
     if (!media.isPlaying || media.positionUpdateTimeMs == 0L) return media.positionMs
     val elapsed = SystemClock.elapsedRealtime() - media.positionUpdateTimeMs
     return media.positionMs + (elapsed * media.playbackSpeed).toLong()
 }
 
-/** Pull an accent color out of the album art; falls back to the app accent. */
-@Composable
-private fun rememberArtAccent(art: Bitmap?): Color {
-    var accent by remember { mutableStateOf(StandbyAccent) }
-    LaunchedEffect(art) {
-        accent = if (art == null) {
-            StandbyAccent
-        } else {
-            withContext(Dispatchers.Default) {
-                val palette = Palette.from(art).generate()
-                val rgb = palette.vibrantSwatch?.rgb
-                    ?: palette.lightVibrantSwatch?.rgb
-                    ?: palette.dominantSwatch?.rgb
-                rgb?.let { Color(it) } ?: StandbyAccent
-            }
-        }
-    }
-    return accent
-}

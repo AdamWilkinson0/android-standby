@@ -35,7 +35,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.compose.LifecycleResumeEffect
-import com.adamwilkinson.standby.ui.theme.StandbyAccent
 import com.adamwilkinson.standby.ui.theme.StandbyDim
 import com.adamwilkinson.standby.ui.theme.StandbyFaint
 import kotlinx.coroutines.launch
@@ -172,7 +171,10 @@ private fun OnboardingStep(
                 textAlign = TextAlign.Center,
             )
             OutlinedButton(onClick = onAction, enabled = actionEnabled) {
-                Text(actionLabel, color = if (actionEnabled) StandbyAccent else StandbyDim)
+                Text(
+                    actionLabel,
+                    color = if (actionEnabled) MaterialTheme.colorScheme.primary else StandbyDim,
+                )
             }
             TextButton(onClick = onSkip) {
                 Text(skipLabel, color = StandbyDim)

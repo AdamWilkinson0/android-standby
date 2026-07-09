@@ -41,45 +41,74 @@ val Oswald = FontFamily(
     oswaldFont(FontWeight.SemiBold),
 )
 
+private fun rubikFont(weight: FontWeight) = Font(
+    R.font.rubik_variable,
+    weight = weight,
+    variationSettings = FontVariation.Settings(FontVariation.weight(weight.weight)),
+)
+
+val Rubik = FontFamily(
+    rubikFont(FontWeight.Normal),
+    rubikFont(FontWeight.Medium),
+    rubikFont(FontWeight.SemiBold),
+    rubikFont(FontWeight.Bold),
+    rubikFont(FontWeight.ExtraBold),
+    rubikFont(FontWeight.Black),
+)
+
+private fun spaceGroteskFont(weight: FontWeight) = Font(
+    R.font.space_grotesk_variable,
+    weight = weight,
+    variationSettings = FontVariation.Settings(FontVariation.weight(weight.weight)),
+)
+
+val SpaceGrotesk = FontFamily(
+    spaceGroteskFont(FontWeight.Normal),
+    spaceGroteskFont(FontWeight.Medium),
+    spaceGroteskFont(FontWeight.SemiBold),
+    spaceGroteskFont(FontWeight.Bold),
+)
+
 /** Tabular figures so clock digits never jiggle as they change. */
 const val TABULAR_NUMS = "tnum"
 
+// Bold-first scale: confident weights everywhere, thin weights are gone.
 val StandbyTypography = Typography(
     displayLarge = TextStyle(
         fontFamily = Inter,
-        fontWeight = FontWeight.ExtraLight,
+        fontWeight = FontWeight.Bold,
         fontSize = 120.sp,
         fontFeatureSettings = TABULAR_NUMS,
     ),
     displayMedium = TextStyle(
         fontFamily = Inter,
-        fontWeight = FontWeight.Light,
+        fontWeight = FontWeight.SemiBold,
         fontSize = 56.sp,
         fontFeatureSettings = TABULAR_NUMS,
     ),
     headlineMedium = TextStyle(
         fontFamily = Inter,
-        fontWeight = FontWeight.Normal,
+        fontWeight = FontWeight.SemiBold,
         fontSize = 28.sp,
     ),
     titleLarge = TextStyle(
         fontFamily = Inter,
-        fontWeight = FontWeight.Medium,
+        fontWeight = FontWeight.Bold,
         fontSize = 22.sp,
     ),
     bodyLarge = TextStyle(
         fontFamily = Inter,
-        fontWeight = FontWeight.Normal,
+        fontWeight = FontWeight.Medium,
         fontSize = 18.sp,
     ),
     bodyMedium = TextStyle(
         fontFamily = Inter,
-        fontWeight = FontWeight.Normal,
+        fontWeight = FontWeight.Medium,
         fontSize = 15.sp,
     ),
     labelMedium = TextStyle(
         fontFamily = Inter,
-        fontWeight = FontWeight.Medium,
+        fontWeight = FontWeight.SemiBold,
         fontSize = 13.sp,
         letterSpacing = 1.5.sp,
     ),

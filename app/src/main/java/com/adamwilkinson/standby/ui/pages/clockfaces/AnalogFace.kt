@@ -4,13 +4,13 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
-import com.adamwilkinson.standby.ui.theme.StandbyAccent
+import androidx.compose.ui.unit.dp
+import com.adamwilkinson.standby.ui.theme.AccentPreset
 import com.adamwilkinson.standby.ui.theme.StandbyDim
 import com.adamwilkinson.standby.ui.theme.StandbyFaint
 import java.time.LocalDateTime
@@ -20,10 +20,12 @@ import kotlin.math.sin
 
 /** Canvas-drawn analog face with a ticking second hand. */
 @Composable
-fun AnalogFace(time: LocalDateTime, modifier: Modifier = Modifier) {
-    val handColor = MaterialTheme.colorScheme.onBackground
-
-    Box(modifier = modifier.fillMaxHeight(0.85f).aspectRatio(1f)) {
+fun AnalogFace(
+    time: LocalDateTime,
+    accent: AccentPreset,
+    modifier: Modifier = Modifier,
+) {
+    Box(modifier = modifier.fillMaxHeight(0.95f).aspectRatio(1f)) {
         Canvas(modifier = Modifier.aspectRatio(1f).fillMaxHeight()) {
             val radius = min(size.width, size.height) / 2f
             val center = Offset(size.width / 2f, size.height / 2f)
@@ -44,7 +46,7 @@ fun AnalogFace(time: LocalDateTime, modifier: Modifier = Modifier) {
                         (cos(angle) * outer).toFloat(),
                         (sin(angle) * outer).toFloat(),
                     ),
-                    strokeWidth = if (isQuarter) 6f else 3f,
+                    strokeWidth = (if (isQuarter) 3.dp else 1.5.dp).toPx(),
                     cap = StrokeCap.Round,
                 )
             }
@@ -67,11 +69,11 @@ fun AnalogFace(time: LocalDateTime, modifier: Modifier = Modifier) {
             val minute = time.minute + second / 60.0
             val hour = time.hour % 12 + minute / 60.0
 
-            drawHand(hour / 12.0, length = 0.5f, width = 14f, color = handColor)
-            drawHand(minute / 60.0, length = 0.72f, width = 9f, color = handColor)
-            drawHand(second / 60.0, length = 0.8f, width = 3f, color = StandbyAccent)
+            drawHand(hour / 12.0, length = 0.5f, width = 8.dp.toPx(), color = accent.primary)
+            drawHand(minute / 60.0, length = 0.72f, width = 5.dp.toPx(), color = accent.primary)
+            drawHand(second / 60.0, length = 0.8f, width = 1.5.dp.toPx(), color = accent.secondary)
 
-            drawCircle(color = handColor, radius = 10f, center = center)
+            drawCircle(color = accent.primary, radius = 5.dp.toPx(), center = center)
         }
     }
 }

@@ -16,11 +16,16 @@ private val Context.settingsDataStore by preferencesDataStore(name = "settings")
 data class StandbySettings(
     val pageIds: String?,
     val clockFaceId: String?,
+    val clockFontId: String?,
+    val accentId: String?,
     val manualCityName: String?,
     val manualLatitude: Double?,
     val manualLongitude: Double?,
     val useFahrenheit: Boolean,
     val nightDimEnabled: Boolean,
+    val autoSplitMedia: Boolean,
+    val leftPaneId: String?,
+    val rightPaneId: String?,
     val onboardingComplete: Boolean,
     /** Window brightness override 0.05..1, or null to follow the system. */
     val screenBrightness: Float?,
@@ -31,6 +36,11 @@ class SettingsRepository(private val context: Context) {
     private object Keys {
         val PAGES = stringPreferencesKey("pages")
         val CLOCK_FACE = stringPreferencesKey("clock_face")
+        val CLOCK_FONT = stringPreferencesKey("clock_font")
+        val ACCENT_THEME = stringPreferencesKey("accent_theme")
+        val AUTO_SPLIT_MEDIA = booleanPreferencesKey("auto_split_media")
+        val PANE_LEFT = stringPreferencesKey("pane_left")
+        val PANE_RIGHT = stringPreferencesKey("pane_right")
         val CITY_NAME = stringPreferencesKey("city_name")
         val CITY_LAT = doublePreferencesKey("city_lat")
         val CITY_LON = doublePreferencesKey("city_lon")
@@ -44,6 +54,11 @@ class SettingsRepository(private val context: Context) {
         StandbySettings(
             pageIds = prefs[Keys.PAGES],
             clockFaceId = prefs[Keys.CLOCK_FACE],
+            clockFontId = prefs[Keys.CLOCK_FONT],
+            accentId = prefs[Keys.ACCENT_THEME],
+            autoSplitMedia = prefs[Keys.AUTO_SPLIT_MEDIA] ?: true,
+            leftPaneId = prefs[Keys.PANE_LEFT],
+            rightPaneId = prefs[Keys.PANE_RIGHT],
             manualCityName = prefs[Keys.CITY_NAME],
             manualLatitude = prefs[Keys.CITY_LAT],
             manualLongitude = prefs[Keys.CITY_LON],
@@ -62,6 +77,26 @@ class SettingsRepository(private val context: Context) {
 
     suspend fun setClockFace(id: String) {
         context.settingsDataStore.edit { it[Keys.CLOCK_FACE] = id }
+    }
+
+    suspend fun setClockFont(id: String) {
+        context.settingsDataStore.edit { it[Keys.CLOCK_FONT] = id }
+    }
+
+    suspend fun setAccent(id: String) {
+        context.settingsDataStore.edit { it[Keys.ACCENT_THEME] = id }
+    }
+
+    suspend fun setAutoSplitMedia(value: Boolean) {
+        context.settingsDataStore.edit { it[Keys.AUTO_SPLIT_MEDIA] = value }
+    }
+
+    suspend fun setLeftPane(id: String) {
+        context.settingsDataStore.edit { it[Keys.PANE_LEFT] = id }
+    }
+
+    suspend fun setRightPane(id: String) {
+        context.settingsDataStore.edit { it[Keys.PANE_RIGHT] = id }
     }
 
     suspend fun setManualCity(name: String, latitude: Double, longitude: Double) {

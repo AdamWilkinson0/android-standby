@@ -33,9 +33,11 @@ import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.adamwilkinson.standby.data.calendar.CalendarEvent
+import com.adamwilkinson.standby.ui.WidgetSize
 import com.adamwilkinson.standby.ui.components.PermissionCard
 import com.adamwilkinson.standby.ui.rememberCurrentTime
 import com.adamwilkinson.standby.ui.theme.Inter
+import com.adamwilkinson.standby.ui.theme.LocalAccent
 import com.adamwilkinson.standby.ui.theme.StandbyDim
 import com.adamwilkinson.standby.ui.theme.StandbyFaint
 import com.adamwilkinson.standby.vm.CalendarUiState
@@ -84,40 +86,52 @@ fun CalendarPage(
 
 /** The empty state is a beautiful date display, never a useless page. */
 @Composable
-private fun BigDate(subtitle: String) {
+internal fun BigDate(
+    subtitle: String?,
+    size: WidgetSize = WidgetSize.Full,
+    modifier: Modifier = Modifier,
+) {
+    val accent = LocalAccent.current
     val time by rememberCurrentTime()
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+    Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
             text = time.format(DateTimeFormatter.ofPattern("EEEE", Locale.getDefault()))
                 .uppercase(Locale.getDefault()),
             style = MaterialTheme.typography.labelMedium,
-            color = StandbyDim,
+            color = accent.secondary,
         )
         Text(
             text = time.format(DateTimeFormatter.ofPattern("d")),
             style = MaterialTheme.typography.displayLarge.copy(
                 fontFamily = Inter,
-                fontWeight = FontWeight.ExtraLight,
-                fontSize = 150.sp,
+                fontWeight = FontWeight.Bold,
+                fontSize = if (size == WidgetSize.Full) 170.sp else 110.sp,
             ),
-            color = MaterialTheme.colorScheme.onBackground,
+            color = accent.primary,
         )
         Text(
             text = time.format(DateTimeFormatter.ofPattern("MMMM", Locale.getDefault())),
-            style = MaterialTheme.typography.headlineMedium,
-            color = StandbyDim,
+            style = if (size == WidgetSize.Full) {
+                MaterialTheme.typography.headlineMedium
+            } else {
+                MaterialTheme.typography.titleLarge
+            },
+            color = accent.secondary,
         )
-        Spacer(Modifier.height(12.dp))
-        Text(
-            text = subtitle,
-            style = MaterialTheme.typography.bodyMedium,
-            color = StandbyFaint,
-        )
+        if (subtitle != null) {
+            Spacer(Modifier.height(12.dp))
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodyMedium,
+                color = StandbyFaint,
+            )
+        }
     }
 }
 
 @Composable
 private fun EventsContent(events: List<CalendarEvent>) {
+    val accent = LocalAccent.current
     val time by rememberCurrentTime()
 
     Row(
@@ -132,15 +146,15 @@ private fun EventsContent(events: List<CalendarEvent>) {
                 text = time.format(DateTimeFormatter.ofPattern("d")),
                 style = MaterialTheme.typography.displayLarge.copy(
                     fontFamily = Inter,
-                    fontWeight = FontWeight.ExtraLight,
+                    fontWeight = FontWeight.Bold,
                     fontSize = 110.sp,
                 ),
-                color = MaterialTheme.colorScheme.onBackground,
+                color = accent.primary,
             )
             Text(
                 text = time.format(DateTimeFormatter.ofPattern("EEEE", Locale.getDefault())),
                 style = MaterialTheme.typography.headlineMedium,
-                color = StandbyDim,
+                color = accent.secondary,
             )
         }
 
@@ -156,7 +170,7 @@ private fun EventsContent(events: List<CalendarEvent>) {
 }
 
 @Composable
-private fun EventRow(event: CalendarEvent) {
+internal fun EventRow(event: CalendarEvent) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Box(
             modifier = Modifier
