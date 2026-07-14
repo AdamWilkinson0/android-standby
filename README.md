@@ -21,16 +21,6 @@ Tap the screen to reveal the settings gear and a brightness slider. Between
 22:00 and 07:00 an optional warm dim overlay kicks in. Everything runs on a
 true-black background with subtle pixel drift to protect OLED panels.
 
-## Permissions (all optional, all skippable)
-
-| Permission | Used for |
-| --- | --- |
-| Notification access | Reading and controlling active media sessions |
-| Coarse location | Local weather (or type a city instead) |
-| Read calendar | Upcoming events |
-
-The clock and battery pages work with no permissions at all.
-
 ## Building
 
 ```sh
