@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -30,9 +31,13 @@ import androidx.compose.ui.unit.dp
 import com.adamwilkinson.standby.ui.split.PaneWidget
 import com.adamwilkinson.standby.ui.theme.StandbyDim
 
+/** Optional "split / merge the right half" action shown below the widget list. */
+data class SplitToggle(val isSplit: Boolean, val onToggle: () -> Unit)
+
 /**
  * Long-press a split pane and pick what lives there — a discoverable
- * shortcut for the vertical swipe.
+ * shortcut for the vertical swipe. When the pane supports stacking, a toggle
+ * splits the right half into two widgets (or merges it back).
  */
 @Composable
 fun PanePickerOverlay(
@@ -41,6 +46,7 @@ fun PanePickerOverlay(
     onSelect: (PaneWidget) -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
+    splitToggle: SplitToggle? = null,
 ) {
     AnimatedVisibility(
         visible = visible,
@@ -96,6 +102,29 @@ fun PanePickerOverlay(
                             } else {
                                 StandbyDim
                             },
+                        )
+                    }
+                }
+
+                if (splitToggle != null) {
+                    HorizontalDivider(
+                        color = Color(0xFF262626),
+                        modifier = Modifier.padding(horizontal = 18.dp, vertical = 6.dp),
+                    )
+                    Box(
+                        modifier = Modifier
+                            .padding(horizontal = 10.dp)
+                            .clip(RoundedCornerShape(14.dp))
+                            .clickable {
+                                splitToggle.onToggle()
+                                onDismiss()
+                            }
+                            .padding(horizontal = 18.dp, vertical = 13.dp),
+                    ) {
+                        Text(
+                            text = if (splitToggle.isSplit) "Merge into one" else "Split into two",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.primary,
                         )
                     }
                 }

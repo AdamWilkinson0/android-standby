@@ -17,11 +17,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
@@ -38,7 +36,6 @@ import com.adamwilkinson.standby.vm.BatteryViewModel
 import com.adamwilkinson.standby.vm.StandbyViewModels
 
 private val ChargeGreen = Color(0xFF6FCF97)
-private val ChargeGreenDeep = Color(0xFF2E7D51)
 
 @Composable
 fun BatteryPage(
@@ -78,7 +75,6 @@ fun BatteryRing(
     val accent = LocalAccent.current
     val active = status.isCharging || status.isFull
     val ringColor = if (active) ChargeGreen else accent.primary
-    val ringColorDeep = if (active) ChargeGreenDeep else accent.deep
     val sweep by animateFloatAsState(
         targetValue = status.percent / 100f * 360f,
         animationSpec = tween(900),
@@ -99,23 +95,15 @@ fun BatteryRing(
                 size = arcSize,
                 style = stroke,
             )
-            // Sweep gradient rotated so the dark end sits at the arc start
-            // (12 o'clock) and brightens toward the tip.
-            rotate(degrees = -90f) {
-                drawArc(
-                    brush = Brush.sweepGradient(
-                        0f to ringColorDeep,
-                        0.25f to ringColor,
-                        1f to ringColor,
-                    ),
-                    startAngle = 0f,
-                    sweepAngle = sweep,
-                    useCenter = false,
-                    topLeft = Offset(inset, inset),
-                    size = arcSize,
-                    style = stroke,
-                )
-            }
+            drawArc(
+                color = ringColor,
+                startAngle = -90f,
+                sweepAngle = sweep,
+                useCenter = false,
+                topLeft = Offset(inset, inset),
+                size = arcSize,
+                style = stroke,
+            )
         }
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(

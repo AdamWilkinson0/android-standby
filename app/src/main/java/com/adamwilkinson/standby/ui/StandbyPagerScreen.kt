@@ -50,8 +50,10 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.adamwilkinson.standby.ui.customize.ClockCustomizerOverlay
 import com.adamwilkinson.standby.ui.customize.PanePickerOverlay
+import com.adamwilkinson.standby.ui.customize.SplitToggle
 import com.adamwilkinson.standby.ui.pages.clockfaces.ClockFaceStyle
 import com.adamwilkinson.standby.ui.pages.clockfaces.ClockFont
+import com.adamwilkinson.standby.ui.split.PaneSlot
 import com.adamwilkinson.standby.ui.split.PaneWidget
 import com.adamwilkinson.standby.ui.split.SplitView
 import com.adamwilkinson.standby.ui.split.rememberSplitPaneState
@@ -74,8 +76,12 @@ fun StandbyPagerScreen(
     autoSplitMedia: Boolean,
     leftPaneId: String?,
     rightPaneId: String?,
+    rightSplit: Boolean,
+    rightBottomPaneId: String?,
     onLeftPaneChanged: (String) -> Unit,
     onRightPaneChanged: (String) -> Unit,
+    onRightBottomPaneChanged: (String) -> Unit,
+    onRightSplitChanged: (Boolean) -> Unit,
     onClockFaceSelected: (ClockFaceStyle) -> Unit,
     onClockFontSelected: (ClockFont) -> Unit,
     onAccentSelected: (AccentPreset) -> Unit,
@@ -85,12 +91,12 @@ fun StandbyPagerScreen(
     modifier: Modifier = Modifier,
 ) {
     val pagerState = rememberPagerState { pages.size }
-    val splitState = rememberSplitPaneState(leftPaneId, rightPaneId)
+    val splitState = rememberSplitPaneState(leftPaneId, rightPaneId, rightBottomPaneId)
     val scope = rememberCoroutineScope()
 
     // Long-press edit modes: the clock customizer and the pane picker.
     var customizing by remember { mutableStateOf(false) }
-    var pickerForLeftPane by remember { mutableStateOf<Boolean?>(null) }
+    var pickerSlot by remember { mutableStateOf<PaneSlot?>(null) }
 
     // Persist only user-settled pane swipes. Auto-split announces the page it
     // is about to animate to; that one settle event is skipped so a temporary
@@ -106,6 +112,11 @@ fun StandbyPagerScreen(
             val skip = skipRightPersistFor == it
             skipRightPersistFor = null
             if (!skip) onRightPaneChanged(PaneWidget.All[it].id)
+        }
+    }
+    LaunchedEffect(splitState) {
+        snapshotFlow { splitState.rightBottomPager.settledPage }.drop(1).collect {
+            onRightBottomPaneChanged(PaneWidget.All[it].id)
         }
     }
 
@@ -209,11 +220,12 @@ fun StandbyPagerScreen(
                         state = splitState,
                         clockFace = clockFace,
                         clockFont = clockFont,
-                        onPaneLongPress = { isLeft, widget ->
+                        rightSplit = rightSplit,
+                        onPaneLongPress = { slot, widget ->
                             if (widget == PaneWidget.Clock) {
                                 customizing = true
                             } else {
-                                pickerForLeftPane = isLeft
+                                pickerSlot = slot
                             }
                         },
                     )
@@ -243,10 +255,16 @@ fun StandbyPagerScreen(
             onDone = { customizing = false },
         )
 
-        val pickerPager = when (pickerForLeftPane) {
-            true -> splitState.leftPager
-            false -> splitState.rightPager
+        val pickerPager = when (pickerSlot) {
+            PaneSlot.Left -> splitState.leftPager
+            PaneSlot.RightTop -> splitState.rightPager
+            PaneSlot.RightBottom -> splitState.rightBottomPager
             null -> null
+        }
+        val splitToggle = when (pickerSlot) {
+            PaneSlot.RightTop, PaneSlot.RightBottom ->
+                SplitToggle(isSplit = rightSplit, onToggle = { onRightSplitChanged(!rightSplit) })
+            else -> null
         }
         PanePickerOverlay(
             visible = pickerPager != null,
@@ -258,7 +276,8 @@ fun StandbyPagerScreen(
                     }
                 }
             },
-            onDismiss = { pickerForLeftPane = null },
+            onDismiss = { pickerSlot = null },
+            splitToggle = splitToggle,
         )
 
         // Night dim: warm-black wash between 22:00 and 07:00. Draw-only, so

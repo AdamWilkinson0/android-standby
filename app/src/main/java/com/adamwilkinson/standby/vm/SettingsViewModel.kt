@@ -46,6 +46,14 @@ class SettingsViewModel(
         viewModelScope.launch { settingsRepository.setRightPane(id) }
     }
 
+    fun setRightSplit(value: Boolean) {
+        viewModelScope.launch { settingsRepository.setRightSplit(value) }
+    }
+
+    fun setRightBottomPane(id: String) {
+        viewModelScope.launch { settingsRepository.setRightBottomPane(id) }
+    }
+
     fun setPageEnabled(page: StandbyPage, enabled: Boolean) {
         viewModelScope.launch {
             val current = StandbyPage.fromIds(settings.value?.pageIds)

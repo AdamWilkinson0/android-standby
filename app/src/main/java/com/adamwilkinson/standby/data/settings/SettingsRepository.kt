@@ -26,6 +26,9 @@ data class StandbySettings(
     val autoSplitMedia: Boolean,
     val leftPaneId: String?,
     val rightPaneId: String?,
+    /** When true the right half stacks two widgets (top = rightPaneId, bottom = rightBottomPaneId). */
+    val rightSplit: Boolean,
+    val rightBottomPaneId: String?,
     val onboardingComplete: Boolean,
     /** Window brightness override 0.05..1, or null to follow the system. */
     val screenBrightness: Float?,
@@ -41,6 +44,8 @@ class SettingsRepository(private val context: Context) {
         val AUTO_SPLIT_MEDIA = booleanPreferencesKey("auto_split_media")
         val PANE_LEFT = stringPreferencesKey("pane_left")
         val PANE_RIGHT = stringPreferencesKey("pane_right")
+        val PANE_RIGHT_SPLIT = booleanPreferencesKey("pane_right_split")
+        val PANE_RIGHT_BOTTOM = stringPreferencesKey("pane_right_bottom")
         val CITY_NAME = stringPreferencesKey("city_name")
         val CITY_LAT = doublePreferencesKey("city_lat")
         val CITY_LON = doublePreferencesKey("city_lon")
@@ -59,6 +64,8 @@ class SettingsRepository(private val context: Context) {
             autoSplitMedia = prefs[Keys.AUTO_SPLIT_MEDIA] ?: true,
             leftPaneId = prefs[Keys.PANE_LEFT],
             rightPaneId = prefs[Keys.PANE_RIGHT],
+            rightSplit = prefs[Keys.PANE_RIGHT_SPLIT] ?: false,
+            rightBottomPaneId = prefs[Keys.PANE_RIGHT_BOTTOM],
             manualCityName = prefs[Keys.CITY_NAME],
             manualLatitude = prefs[Keys.CITY_LAT],
             manualLongitude = prefs[Keys.CITY_LON],
@@ -97,6 +104,14 @@ class SettingsRepository(private val context: Context) {
 
     suspend fun setRightPane(id: String) {
         context.settingsDataStore.edit { it[Keys.PANE_RIGHT] = id }
+    }
+
+    suspend fun setRightSplit(value: Boolean) {
+        context.settingsDataStore.edit { it[Keys.PANE_RIGHT_SPLIT] = value }
+    }
+
+    suspend fun setRightBottomPane(id: String) {
+        context.settingsDataStore.edit { it[Keys.PANE_RIGHT_BOTTOM] = id }
     }
 
     suspend fun setManualCity(name: String, latitude: Double, longitude: Double) {
