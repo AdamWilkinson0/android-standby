@@ -8,6 +8,9 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.Stroke
 
 /*
  * Hand-drawn transport icons instead of material-icons-extended: keeps the
@@ -32,14 +35,28 @@ fun PlayPauseIcon(isPlaying: Boolean, color: Color, modifier: Modifier = Modifie
             }
         } else {
             val path = Path().apply {
-                moveTo(size.width * 0.12f, 0f)
-                lineTo(size.width * 0.95f, size.height / 2f)
-                lineTo(size.width * 0.12f, size.height)
+                moveTo(size.width * 0.16f, size.height * 0.06f)
+                lineTo(size.width * 0.88f, size.height / 2f)
+                lineTo(size.width * 0.16f, size.height * 0.94f)
                 close()
             }
-            drawPath(path, color)
+            drawRoundedTriangle(path, color, size.minDimension * 0.16f)
         }
     }
+}
+
+/**
+ * Fills [path] and strokes it with a round join so the corners read as soft
+ * curves instead of sharp points. The round-join stroke widens the shape by
+ * [radius] on every side, so triangle geometry is inset to compensate.
+ */
+private fun DrawScope.drawRoundedTriangle(path: Path, color: Color, radius: Float) {
+    drawPath(
+        path = path,
+        color = color,
+        style = Stroke(width = radius * 2f, join = StrokeJoin.Round, cap = StrokeCap.Round),
+    )
+    drawPath(path, color)
 }
 
 @Composable
@@ -48,16 +65,17 @@ fun SkipIcon(forward: Boolean, color: Color, modifier: Modifier = Modifier) {
         val w = size.width
         val h = size.height
         val barWidth = w * 0.12f
+        val radius = w * 0.12f
 
         fun triangle(fromX: Float, toX: Float) = Path().apply {
-            moveTo(fromX, 0f)
+            moveTo(fromX, h * 0.08f)
             lineTo(toX, h / 2f)
-            lineTo(fromX, h)
+            lineTo(fromX, h * 0.92f)
             close()
         }
 
         if (forward) {
-            drawPath(triangle(0f, w * 0.62f), color)
+            drawRoundedTriangle(triangle(w * 0.06f, w * 0.56f), color, radius)
             drawRoundRect(
                 color = color,
                 topLeft = Offset(w - barWidth, 0f),
@@ -65,7 +83,7 @@ fun SkipIcon(forward: Boolean, color: Color, modifier: Modifier = Modifier) {
                 cornerRadius = androidx.compose.ui.geometry.CornerRadius(barWidth / 2.5f),
             )
         } else {
-            drawPath(triangle(w, w * 0.38f), color)
+            drawRoundedTriangle(triangle(w * 0.94f, w * 0.44f), color, radius)
             drawRoundRect(
                 color = color,
                 topLeft = Offset(0f, 0f),

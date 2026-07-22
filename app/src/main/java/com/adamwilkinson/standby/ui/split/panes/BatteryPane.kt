@@ -2,6 +2,7 @@ package com.adamwilkinson.standby.ui.split.panes
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -12,7 +13,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.adamwilkinson.standby.ui.pages.BatteryRing
+import com.adamwilkinson.standby.ui.pages.BatteryBar
 import com.adamwilkinson.standby.ui.theme.Inter
 import com.adamwilkinson.standby.ui.theme.TABULAR_NUMS
 import com.adamwilkinson.standby.vm.BatteryViewModel
@@ -25,18 +26,22 @@ fun BatteryPane(
 ) {
     val status by viewModel.status.collectAsStateWithLifecycle()
 
-    Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(horizontal = 30.dp),
+        contentAlignment = Alignment.Center,
+    ) {
         status?.let {
-            BatteryRing(
+            BatteryBar(
                 status = it,
-                diameter = 190.dp,
-                strokeWidth = 16.dp,
                 percentStyle = MaterialTheme.typography.displayMedium.copy(
                     fontFamily = Inter,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 52.sp,
+                    fontSize = 72.sp,
                     fontFeatureSettings = TABULAR_NUMS,
                 ),
+                barHeight = 24.dp,
                 showStatusText = true,
             )
         }

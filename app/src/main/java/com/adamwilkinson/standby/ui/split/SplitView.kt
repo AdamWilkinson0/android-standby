@@ -2,6 +2,7 @@ package com.adamwilkinson.standby.ui.split
 
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -64,10 +65,12 @@ fun rememberSplitPaneState(
 }
 
 /**
- * iPhone-StandBy style split screen. The left widget is given the larger share
- * of the width (and hugs less of the outer edge on the right) so the two halves
- * sit closer together, leaving the clock room to breathe. The right half can be
- * stacked into a top + bottom pair of compact widgets.
+ * iPhone-StandBy style split screen. Each widget lives in its own softly filled,
+ * rounded tile so the halves read as one matched set rather than content
+ * floating on black. The tiles share tight, even gutters (a single [PANE_GAP]
+ * everywhere) so there is no dead space between them. The left widget takes the
+ * larger share of the width; the right half can be stacked into a top + bottom
+ * pair of compact widgets.
  */
 @Composable
 fun SplitView(
@@ -78,7 +81,12 @@ fun SplitView(
     onPaneLongPress: (slot: PaneSlot, widget: PaneWidget) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Row(modifier = modifier.fillMaxSize()) {
+    Row(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(PANE_GAP),
+        horizontalArrangement = Arrangement.spacedBy(PANE_GAP),
+    ) {
         PaneColumn(
             pagerState = state.leftPager,
             clockFace = clockFace,
@@ -87,15 +95,15 @@ fun SplitView(
             indicatorAlignment = Alignment.CenterStart,
             onLongPress = { widget -> onPaneLongPress(PaneSlot.Left, widget) },
             modifier = Modifier
-                .weight(1.35f)
+                .weight(1.8f)
                 .fillMaxSize(),
         )
         if (rightSplit) {
             Column(
                 modifier = Modifier
                     .weight(1f)
-                    .fillMaxSize()
-                    .padding(end = 4.dp),
+                    .fillMaxSize(),
+                verticalArrangement = Arrangement.spacedBy(PANE_GAP),
             ) {
                 PaneColumn(
                     pagerState = state.rightPager,
@@ -130,12 +138,14 @@ fun SplitView(
                 onLongPress = { widget -> onPaneLongPress(PaneSlot.RightTop, widget) },
                 modifier = Modifier
                     .weight(1f)
-                    .fillMaxSize()
-                    .padding(end = 4.dp),
+                    .fillMaxSize(),
             )
         }
     }
 }
+
+/** Even gutter used between every widget and around the whole split. */
+private val PANE_GAP = 4.dp
 
 @Composable
 private fun PaneColumn(

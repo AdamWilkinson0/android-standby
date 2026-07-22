@@ -4,6 +4,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -194,30 +195,62 @@ internal fun WeatherContent(
             }
         }
     } else {
-        Column(
-            modifier = modifier,
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            WeatherGlyph(
-                kind = weatherKind(weather.weatherCode, weather.isDay),
-                modifier = Modifier.size(84.dp),
-            )
-            Text(
-                text = "${weather.temperature.roundToInt()}°",
-                style = tempStyle,
-                color = accent.primary,
-            )
-            Text(
-                text = weatherDescription(weather.weatherCode),
-                style = MaterialTheme.typography.titleLarge,
-                color = accent.secondary,
-            )
-            Spacer(Modifier.height(6.dp))
-            Text(
-                text = rangeLine,
-                style = MaterialTheme.typography.bodyMedium,
-                color = StandbyDim,
-            )
+        BoxWithConstraints(modifier = modifier, contentAlignment = Alignment.Center) {
+            // In the wide left split slot, lay the glyph beside the readout so it
+            // fills the width; in a narrow slot keep the compact vertical stack.
+            val wide = maxWidth > maxHeight
+            if (wide) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(32.dp),
+                ) {
+                    WeatherGlyph(
+                        kind = weatherKind(weather.weatherCode, weather.isDay),
+                        modifier = Modifier.size(128.dp),
+                    )
+                    Column {
+                        Text(
+                            text = "${weather.temperature.roundToInt()}°",
+                            style = tempStyle,
+                            color = accent.primary,
+                        )
+                        Text(
+                            text = weatherDescription(weather.weatherCode),
+                            style = MaterialTheme.typography.titleLarge,
+                            color = accent.secondary,
+                        )
+                        Spacer(Modifier.height(6.dp))
+                        Text(
+                            text = rangeLine,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = StandbyDim,
+                        )
+                    }
+                }
+            } else {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    WeatherGlyph(
+                        kind = weatherKind(weather.weatherCode, weather.isDay),
+                        modifier = Modifier.size(84.dp),
+                    )
+                    Text(
+                        text = "${weather.temperature.roundToInt()}°",
+                        style = tempStyle,
+                        color = accent.primary,
+                    )
+                    Text(
+                        text = weatherDescription(weather.weatherCode),
+                        style = MaterialTheme.typography.titleLarge,
+                        color = accent.secondary,
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        text = rangeLine,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = StandbyDim,
+                    )
+                }
+            }
         }
     }
 }

@@ -3,20 +3,29 @@ package com.adamwilkinson.standby.ui.pages
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -114,16 +123,105 @@ fun BatteryRing(
             if (showStatusText) {
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    text = when {
-                        status.isFull -> "Fully charged"
-                        status.isCharging && status.plug == PlugType.Wireless -> "Charging wirelessly"
-                        status.isCharging -> "Charging"
-                        else -> "On battery"
-                    },
+                    text = batteryStatusLabel(status),
                     style = MaterialTheme.typography.bodyMedium,
                     color = if (active) ChargeGreen else accent.secondary,
                 )
             }
         }
     }
+}
+
+/**
+ * Bold, non-circular battery readout — a big percentage over a chunky capsule
+ * fill with a battery-terminal nub. Fills the width of a split tile far better
+ * than a ring, so it's the layout used on the main screen's panes.
+ */
+@Composable
+fun BatteryBar(
+    status: BatteryStatus,
+    percentStyle: TextStyle,
+    barHeight: Dp,
+    showStatusText: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    val accent = LocalAccent.current
+    val active = status.isCharging || status.isFull
+    val color = if (active) ChargeGreen else accent.primary
+
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(barHeight * 0.65f),
+    ) {
+        Column {
+            Text(
+                text = "${status.percent}%",
+                style = percentStyle,
+                color = color,
+            )
+            if (showStatusText) {
+                Text(
+                    text = batteryStatusLabel(status),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (active) ChargeGreen else accent.secondary,
+                )
+            }
+        }
+        BatteryCapsule(
+            fraction = status.percent / 100f,
+            color = color,
+            height = barHeight,
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
+}
+
+/** Rounded track + animated fill + a small terminal nub, so it reads as a battery. */
+@Composable
+fun BatteryCapsule(
+    fraction: Float,
+    color: Color,
+    height: Dp,
+    modifier: Modifier = Modifier,
+) {
+    val animated by animateFloatAsState(
+        targetValue = fraction.coerceIn(0f, 1f),
+        animationSpec = tween(900),
+        label = "batteryFill",
+    )
+    val shape = RoundedCornerShape(percent = 50)
+    Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .height(height)
+                .clip(shape)
+                .background(Color(0xFF232323)),
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(animated.coerceAtLeast(0.04f))
+                    .fillMaxHeight()
+                    .clip(shape)
+                    .background(
+                        Brush.horizontalGradient(listOf(color.copy(alpha = 0.82f), color)),
+                    ),
+            )
+        }
+        Spacer(Modifier.width(height * 0.22f))
+        Box(
+            modifier = Modifier
+                .width(height * 0.3f)
+                .height(height * 0.44f)
+                .clip(RoundedCornerShape(percent = 50))
+                .background(Color(0xFF303030)),
+        )
+    }
+}
+
+private fun batteryStatusLabel(status: BatteryStatus): String = when {
+    status.isFull -> "Fully charged"
+    status.isCharging && status.plug == PlugType.Wireless -> "Charging wirelessly"
+    status.isCharging -> "Charging"
+    else -> "On battery"
 }

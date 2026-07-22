@@ -8,6 +8,7 @@ import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,7 +21,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -45,6 +45,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -57,6 +58,7 @@ import com.adamwilkinson.standby.ui.components.SkipIcon
 import com.adamwilkinson.standby.ui.theme.ArtColors
 import com.adamwilkinson.standby.ui.theme.StandbyDim
 import com.adamwilkinson.standby.ui.theme.StandbyFaint
+import com.adamwilkinson.standby.ui.theme.TABULAR_NUMS
 import com.adamwilkinson.standby.ui.theme.rememberArtColors
 import com.adamwilkinson.standby.vm.MediaViewModel
 import com.adamwilkinson.standby.vm.StandbyViewModels
@@ -194,13 +196,23 @@ private fun NowPlayingContent(
             verticalArrangement = Arrangement.Center,
         ) {
             Text(
+                text = "NOW PLAYING",
+                style = MaterialTheme.typography.labelMedium,
+                color = accent,
+            )
+            Spacer(Modifier.height(14.dp))
+            Text(
                 text = media.title,
-                style = MaterialTheme.typography.headlineMedium,
+                style = MaterialTheme.typography.titleLarge.copy(
+                    fontSize = 36.sp,
+                    lineHeight = 40.sp,
+                    letterSpacing = (-0.5).sp,
+                ),
                 color = MaterialTheme.colorScheme.onBackground,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )
-            Spacer(Modifier.height(6.dp))
+            Spacer(Modifier.height(8.dp))
             Text(
                 text = media.artist,
                 style = MaterialTheme.typography.bodyLarge,
@@ -211,7 +223,6 @@ private fun NowPlayingContent(
             Spacer(Modifier.height(36.dp))
             TransportControls(
                 media = media,
-                accent = accent,
                 onPlayPause = onPlayPause,
                 onSkipNext = onSkipNext,
                 onSkipPrevious = onSkipPrevious,
@@ -255,53 +266,64 @@ internal fun AlbumArt(art: Bitmap?, artUri: String?, modifier: Modifier = Modifi
 @Composable
 private fun TransportControls(
     media: NowPlaying,
-    accent: Color,
     onPlayPause: () -> Unit,
     onSkipNext: () -> Unit,
     onSkipPrevious: () -> Unit,
 ) {
+    // Bare white icons with no chip behind them; the clickable Boxes stay sized
+    // for comfortable touch targets but draw nothing themselves.
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(36.dp),
     ) {
         Box(
             modifier = Modifier
-                .size(48.dp)
-                .clip(CircleShape)
-                .clickable(enabled = media.canSkipPrev, onClick = onSkipPrevious),
+                .size(56.dp)
+                .clickable(
+                    enabled = media.canSkipPrev,
+                    onClick = onSkipPrevious,
+                    indication = null,
+                    interactionSource = remember { MutableInteractionSource() },
+                ),
             contentAlignment = Alignment.Center,
         ) {
             SkipIcon(
                 forward = false,
-                color = if (media.canSkipPrev) MaterialTheme.colorScheme.onBackground else StandbyFaint,
-                modifier = Modifier.size(26.dp),
+                color = if (media.canSkipPrev) Color.White else StandbyFaint,
+                modifier = Modifier.size(28.dp),
             )
         }
         Box(
             modifier = Modifier
-                .size(80.dp)
-                .clip(CircleShape)
-                .background(accent)
-                .clickable(onClick = onPlayPause),
+                .size(72.dp)
+                .clickable(
+                    onClick = onPlayPause,
+                    indication = null,
+                    interactionSource = remember { MutableInteractionSource() },
+                ),
             contentAlignment = Alignment.Center,
         ) {
             PlayPauseIcon(
                 isPlaying = media.isPlaying,
-                color = Color.Black,
-                modifier = Modifier.size(32.dp),
+                color = Color.White,
+                modifier = Modifier.size(44.dp),
             )
         }
         Box(
             modifier = Modifier
-                .size(48.dp)
-                .clip(CircleShape)
-                .clickable(enabled = media.canSkipNext, onClick = onSkipNext),
+                .size(56.dp)
+                .clickable(
+                    enabled = media.canSkipNext,
+                    onClick = onSkipNext,
+                    indication = null,
+                    interactionSource = remember { MutableInteractionSource() },
+                ),
             contentAlignment = Alignment.Center,
         ) {
             SkipIcon(
                 forward = true,
-                color = if (media.canSkipNext) MaterialTheme.colorScheme.onBackground else StandbyFaint,
-                modifier = Modifier.size(26.dp),
+                color = if (media.canSkipNext) Color.White else StandbyFaint,
+                modifier = Modifier.size(28.dp),
             )
         }
     }
@@ -321,25 +343,47 @@ private fun ProgressBar(media: NowPlaying, colors: ArtColors) {
 
     if (media.durationMs > 0) {
         val fraction = (position.toFloat() / media.durationMs).coerceIn(0f, 1f)
-        Box(
-            Modifier
-                .fillMaxWidth(0.9f)
-                .height(6.dp)
-                .clip(RoundedCornerShape(3.dp))
-                .background(Color.White.copy(alpha = 0.15f)),
-        ) {
+        val timeStyle = MaterialTheme.typography.bodyMedium.copy(
+            fontSize = 13.sp,
+            fontFeatureSettings = TABULAR_NUMS,
+        )
+        Column(modifier = Modifier.fillMaxWidth(0.9f)) {
             Box(
                 Modifier
-                    .fillMaxWidth(fraction)
+                    .fillMaxWidth()
                     .height(6.dp)
-                    .background(
-                        Brush.horizontalGradient(
-                            listOf(colors.accentDark, colors.accent),
+                    .clip(RoundedCornerShape(3.dp))
+                    .background(Color.White.copy(alpha = 0.15f)),
+            ) {
+                Box(
+                    Modifier
+                        .fillMaxWidth(fraction)
+                        .height(6.dp)
+                        .background(
+                            Brush.horizontalGradient(
+                                listOf(colors.accentDark, colors.accent),
+                            ),
                         ),
-                    ),
-            )
+                )
+            }
+            Spacer(Modifier.height(8.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text(text = formatDuration(position), style = timeStyle, color = StandbyDim)
+                Text(text = formatDuration(media.durationMs), style = timeStyle, color = StandbyDim)
+            }
         }
     }
+}
+
+/** Millis to m:ss for the progress readout. */
+private fun formatDuration(ms: Long): String {
+    val totalSeconds = (ms / 1000).coerceAtLeast(0)
+    val minutes = totalSeconds / 60
+    val seconds = totalSeconds % 60
+    return "%d:%02d".format(minutes, seconds)
 }
 
 internal fun extrapolatedPosition(media: NowPlaying): Long {

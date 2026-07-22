@@ -39,7 +39,7 @@ import com.adamwilkinson.standby.ui.components.MusicNoteIcon
 import com.adamwilkinson.standby.ui.components.PlayPauseIcon
 import com.adamwilkinson.standby.ui.components.WeatherGlyph
 import com.adamwilkinson.standby.ui.pages.AlbumArt
-import com.adamwilkinson.standby.ui.pages.BatteryRing
+import com.adamwilkinson.standby.ui.pages.BatteryCapsule
 import com.adamwilkinson.standby.ui.rememberCurrentTime
 import com.adamwilkinson.standby.ui.split.PaneWidget
 import com.adamwilkinson.standby.ui.theme.Inter
@@ -153,22 +153,34 @@ private fun WeatherMiniContent(weather: Weather) {
 
 @Composable
 private fun BatteryMini(viewModel: BatteryViewModel = viewModel(factory = StandbyViewModels.Factory)) {
+    val accent = LocalAccent.current
     val status by viewModel.status.collectAsStateWithLifecycle()
     status?.let {
-        BatteryRing(
-            status = it,
-            diameter = 120.dp,
-            strokeWidth = 11.dp,
-            percentStyle = MaterialTheme.typography.headlineMedium.copy(
-                fontFamily = Inter,
-                fontWeight = FontWeight.Bold,
-                fontSize = 34.sp,
-                fontFeatureSettings = TABULAR_NUMS,
-            ),
-            showStatusText = false,
-        )
+        val active = it.isCharging || it.isFull
+        val color = if (active) BatteryGreen else accent.primary
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = "${it.percent}%",
+                style = MaterialTheme.typography.displaySmall.copy(
+                    fontFamily = Inter,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 44.sp,
+                    fontFeatureSettings = TABULAR_NUMS,
+                ),
+                color = color,
+            )
+            Spacer(Modifier.width(16.dp))
+            BatteryCapsule(
+                fraction = it.percent / 100f,
+                color = color,
+                height = 16.dp,
+                modifier = Modifier.width(110.dp),
+            )
+        }
     }
 }
+
+private val BatteryGreen = Color(0xFF6FCF97)
 
 @Composable
 private fun CalendarMini(viewModel: CalendarViewModel = viewModel(factory = StandbyViewModels.Factory)) {

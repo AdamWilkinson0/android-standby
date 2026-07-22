@@ -1,45 +1,29 @@
-# Standby
+# Android Standby Mode
 
-An Android take on Apple's iPhone StandBy mode: set your phone on a desk stand
-(ideally charging, in landscape) and get a beautiful, glanceable display.
+An Android app that turns the phone into an aesthetic, glanceable display when it's charging, or placed on it's side. Inspired by iPhone's Standby mode.
 
 ## Pages
 
-Swipe horizontally between:
+Swipe between widget options:
 
-- **Clock** — four faces (Digital, Analog, Flip, Minimal) with per-digit roll
-  animations
-- **Now Playing** — album art, title/artist, play/pause/skip for whatever is
-  playing in Spotify, YouTube, YouTube Music, etc., with an accent color pulled
-  from the artwork and a blurred-art backdrop
-- **Weather** — current conditions via Open-Meteo (no API key), from
-  approximate location or a manually set city
+- **Clock** — (the default) four clock faces available
+- **Now Playing** — displays media being played whether that is Spotify, YouTube, or any other media player
+- **Weather** — current conditions via Open-Meteo api
 - **Calendar** — upcoming events in the next 48 hours
-- **Battery** — charge ring, percentage and charging state
+- **Battery** — percentage and charging status
 
-Tap the screen to reveal the settings gear and a brightness slider. Between
-22:00 and 07:00 an optional warm dim overlay kicks in. Everything runs on a
-true-black background with subtle pixel drift to protect OLED panels.
+Tap the screen to reveal the settings gear and a brightness slider. 
+Between 22:00 and 07:00 an optional warm dim overlay is used. 
+OLED Support: Everything runs on a true black background with subtle pixel drift.
 
 ## Building
 
-```sh
-./gradlew assembleDebug
-adb install -r app/build/outputs/apk/debug/app-debug.apk
-```
+1. Connect your phone via USB with USB debugging enabled.
+2. Run the following command from within the project directory:
 
-Requires JDK 17+ and the Android SDK (compileSdk 36). During development you
-can grant notification access from the shell:
+​```
+./gradlew installDebug
+​```
 
-```sh
-adb shell cmd notification allow_listener \
-  com.adamwilkinson.standby/.data.media.MediaNotificationListener
-```
+Requires JDK 17+ and Android SDK. 
 
-## Stack
-
-Kotlin + Jetpack Compose (Material 3), single activity, manual DI. Media via
-`MediaSessionManager` + an empty `NotificationListenerService`; weather via
-plain OkHttp + kotlinx.serialization; persistence via Preferences DataStore.
-Fonts (Inter, Oswald variable) are bundled — no network dependency at runtime
-except the weather fetch.
